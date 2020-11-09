@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/open-policy-agent/conftest/downloader"
 	"github.com/open-policy-agent/conftest/output"
@@ -16,18 +17,19 @@ import (
 // TestRunner is the runner for the Test command, executing
 // Rego policy checks against configuration files.
 type TestRunner struct {
-	Trace         bool
-	Policy        []string
-	Data          []string
-	Update        []string
-	Ignore        string
-	Parser        string
-	Namespace     []string
-	AllNamespaces bool `mapstructure:"all-namespaces"`
-	FailOnWarn    bool `mapstructure:"fail-on-warn"`
-	NoColor       bool `mapstructure:"no-color"`
-	Combine       bool
-	Output        string
+	Trace           bool
+	Policy          []string
+	Data            []string
+	Update          []string
+	Ignore          string
+	Parser          string
+	Namespace       []string
+	AllNamespaces   bool   `mapstructure:"all-namespaces"`
+	FailOnWarn      bool   `mapstructure:"fail-on-warn"`
+	NoColor         bool   `mapstructure:"no-color"`
+	NamespacePrefix string `mapstructure:"namespace-prefix"`
+	Combine         bool
+	Output          string
 }
 
 // Run executes the TestRunner, verifying all Rego policies against the given
@@ -62,8 +64,8 @@ func (t *TestRunner) Run(ctx context.Context, fileList []string) ([]output.Check
 	}
 
 	namespaces := t.Namespace
-	if t.AllNamespaces {
-		namespaces = engine.Namespaces()
+	if t.AllNamespaces || t.NamespacePrefix != "" {
+		namespaces = getNamespaces(engine.Namespaces(), t.NamespacePrefix, t.AllNamespaces)
 	}
 
 	var results []output.CheckResult
@@ -157,4 +159,18 @@ func getFilesFromDirectory(directory string, ignoreRegex string) ([]string, erro
 	}
 
 	return files, nil
+}
+
+func getNamespaces(engineNamespaces []string, prefix string, allNamespaces bool) []string {
+	if allNamespaces {
+		return engineNamespaces
+	}
+
+	var namespaces []string
+	for _, namespace := range engineNamespaces {
+		if strings.HasPrefix(namespace, prefix) {
+			namespaces = append(namespaces, namespace)
+		}
+	}
+	return namespaces
 }

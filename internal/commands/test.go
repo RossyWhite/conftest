@@ -84,7 +84,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 		Long:  testDesc,
 		Args:  cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			flagNames := []string{"all-namespaces", "combine", "data", "fail-on-warn", "ignore", "namespace", "no-color", "output", "parser", "policy", "trace", "update"}
+			flagNames := []string{"all-namespaces", "combine", "data", "fail-on-warn", "ignore", "namespace", "namespace-prefix", "no-color", "output", "parser", "policy", "trace", "update"}
 			for _, name := range flagNames {
 				if err := viper.BindPFlag(name, cmd.Flags().Lookup(name)); err != nil {
 					return fmt.Errorf("bind flag: %w", err)
@@ -132,6 +132,7 @@ func NewTestCommand(ctx context.Context) *cobra.Command {
 
 	cmd.Flags().String("ignore", "", "A regex pattern which can be used for ignoring paths")
 	cmd.Flags().String("parser", "", fmt.Sprintf("Parser to use to parse the configurations. Valid parsers: %s", parser.Parsers()))
+	cmd.Flags().String("namespace-prefix", "", "Test policies found in namespaces with a prefix")
 
 	cmd.Flags().StringP("output", "o", output.OutputStandard, fmt.Sprintf("Output format for conftest results - valid options are: %s", output.Outputs()))
 
